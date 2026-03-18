@@ -1,5 +1,6 @@
 const routes = {
   home: () => renderDashboard(),
+  kanban: () => renderKanban(),
   toolkit: () => renderToolkit(),
   notes: () => renderNotes(),
   todo: () => renderTodo(),
@@ -7,7 +8,7 @@ const routes = {
   testgame: () => renderGame(),
 };
 
-const protectedRoutes = ["home", "toolkit", "notes", "todo", "game"];
+const protectedRoutes = ["home", "kanban", "toolkit", "notes", "todo", "game"];
 
 function navigate(route) {
   if (!routes[route]) {
