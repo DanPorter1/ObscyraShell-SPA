@@ -30,6 +30,11 @@ function renderDashboard() {
             <p>Tasks</p>
           </div>
 
+          <div class="dash-tile" data-route="kanban">
+            <h2>Kanban</h2>
+            <p>Board workflow</p>
+          </div>
+
           <div class="dash-tile" data-route="login">
             <h2>Account</h2>
             <p>Login & settings</p>
