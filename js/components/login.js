@@ -88,6 +88,7 @@ function initLogin() {
       "https://the-tree-army-767051.danporter-36a.workers.dev/api/login",
       {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: email,
