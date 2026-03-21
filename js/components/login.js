@@ -46,7 +46,7 @@ function renderLogin() {
       </div>
     </section>
   `);
-
+  renderTodo();
   initLogin();
 }
 
@@ -107,7 +107,6 @@ function initLogin() {
 
     localStorage.setItem("auth", "true");
     localStorage.setItem("userID", data.user_username);
-    localStorage.setItem("user_uuid", data.user_uuid);
     navigate("home");
   });
 }

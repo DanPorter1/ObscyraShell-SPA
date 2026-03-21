@@ -4,7 +4,8 @@ const routes = {
   notes: () => renderNotes(),
   todo: () => renderTodo(),
   login: () => renderLogin(),
-  testgame: () => renderGame(),
+  kanban: () => renderKanban(),
+  // testgame: () => renderGame(),
 };
 
 // const protectedRoutes = ["home", "toolkit", "notes", "todo", "game"];
@@ -15,7 +16,7 @@ function navigate(route) {
   }
 
   const protectedRoutes = ["home", "toolkit", "notes", "todo", "game"];
-  const loggedIn = localStorage.getItem("user_uuid") !== null;
+  const loggedIn = localStorage.getItem("userID") !== null;
 
   if (protectedRoutes.includes(route) && !loggedIn) {
     return navigate("login");

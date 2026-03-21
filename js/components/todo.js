@@ -131,11 +131,10 @@ function initTodo() {
   });
 
   on("#btn-save", "click", cloudSave);
-  on("#btn-load", "click", cloudSync);
+  // on("#btn-load", "click", cloudSync);
 }
 
 async function cloudSave() {
-  const uuid = localStorage.getItem("user_uuid");
   const response = await fetch("https://the-tree-army-767051.danporter-36a.workers.dev/api/todo/save", {
     method: "POST",
     credentials: "include",
