@@ -1,247 +1,309 @@
 
 /**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run "npm run dev" in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run "npm run deploy" to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
+ * Obscyra Shell Worker - API Backend
+ * Handles authentication and todo synchronization
  */
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://newui.obscyrashell.pages.dev",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Allow-Credentials": "true"
-};
+/* ============================================================================
+   CONFIG & CONSTANTS
+   ============================================================================ */
 
-export default { 
-  async fetch(request, env) { 
-    const url = new URL(request.url); 
-
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
-    }
-
-    if (url.pathname === "/api/login" && request.method === "POST") {
-      return await login(request, env); } 
-
-    if (url.pathname === "/api/register" && request.method === "POST") {
-      console.log("Path, url.pathname")
-      return await register(request, env);
-    }
-
-    if (url.pathname === "/api/verify" && request.method === "GET") {
-      return await verify(request, env); 
-    }
-
-    if (url.pathname === "/api/status" && request.method === "GET") {
-      return new Response("Running");
-    }
-
-    if (url.pathname === "/api/todo/save" && request.method === "POST") {
-      return await saveTodos(request);
-    }
-
-    // if (url.pathname === "/api/status" && request.method === "GET") {
-    //   return new Response("Running");
-    // }
-      
-    return new Response("Not Found! Sorry... ", { status: 404 });
-   }
-};
-
-async function register(request, env) {
-  let body;
-  try {
-    body = await request.json();
-  } catch (err) {
-    return json({ error: "Invalid or missing JSON body"}, 400);
+const CONFIG = {
+  ALLOWED_ORIGINS: [
+    "https://newui.obscyrashell.pages.dev",  // production
+    "http://127.0.0.1:5500"                  // local development
+  ],
+  DEFAULT_ORIGIN: "https://newui.obscyrashell.pages.dev",
+  TOKEN_EXPIRY: 60 * 60,  // 1 hour in seconds
+  COOKIE_CONFIG: {
+    name: "token",
+    httpOnly: true,
+    secure: true,
+    sameSite: "None",
+    partitioned: true,
+    maxAge: 3600
   }
+};
 
-  const {email, password, username} = body;
+/* ============================================================================
+   ENTRY POINT
+   ============================================================================ */
 
-  if (!email || !password) {
-    return json({ error: "Missing fields" }, 400);
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const origin = request.headers.get("Origin");
+
+    // Handle preflight requests
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: buildCorsHeaders(origin)
+      });
+    }
+
+    try {
+      // Route requests to appropriate handlers
+      if (url.pathname === "/api/login" && request.method === "POST") {
+        return await login(request, env);
+      }
+
+      if (url.pathname === "/api/register" && request.method === "POST") {
+        return await register(request, env);
+      }
+
+      if (url.pathname === "/api/todo/save" && request.method === "POST") {
+        return await saveTodos(request, env);
+      }
+
+      return errorResponse({ error: "Not Found" }, 404, origin);
+    } catch (err) {
+      console.error("Unhandled error:", err.message);
+      return errorResponse({ error: "Internal Server Error" }, 500, origin);
+    }
+  }
+};
+
+/* ============================================================================
+   CORS & RESPONSE HELPERS
+   ============================================================================ */
+
+function buildCorsHeaders(origin) {
+  const safeOrigin = CONFIG.ALLOWED_ORIGINS.includes(origin)
+    ? origin
+    : CONFIG.DEFAULT_ORIGIN;
+
+  return {
+    "Access-Control-Allow-Origin": safeOrigin,
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Credentials": "true"
+  };
+}
+
+/**
+ * Send JSON response with proper CORS headers
+ */
+function jsonResponse(data, options = {}, request = null) {
+  const status = options.status || 200;
+  const origin = request?.headers.get("Origin") || CONFIG.DEFAULT_ORIGIN;
+
+  const headers = {
+    "Content-Type": "application/json",
+    ...buildCorsHeaders(origin),
+    ...(options.headers || {})
+  };
+
+  return new Response(JSON.stringify(data), { status, headers });
+}
+
+/**
+ * Send error response
+ */
+function errorResponse(data, status = 400, origin = null) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...buildCorsHeaders(origin || CONFIG.DEFAULT_ORIGIN)
+  };
+  return new Response(JSON.stringify(data), { status, headers });
+}
+
+/* ============================================================================
+   AUTHENTICATION HANDLERS
+   ============================================================================ */
+
+/**
+ * Register a new user
+ */
+async function register(request, env) {
+  const { body, error } = await parseRequestBody(request);
+  if (error) return errorResponse(error, 400, request.headers.get("Origin"));
+
+  const { email, password, username } = body;
+
+  // Validate required fields
+  if (!email || !password || !username) {
+    return jsonResponse(
+      { error: "Missing required fields: email, password, username" },
+      { status: 400 },
+      request
+    );
   }
 
   const normEmail = email.toLowerCase().trim();
   const normUsername = username.trim();
-  const hash = await hashPassword(password);
-  const userUuid = crypto.randomUUID(); 
-  const now = new Date().toISOString();
 
   try {
-    const createdAt = new Date().toISOString(); 
+    const hash = await hashPassword(password);
+    const userUuid = crypto.randomUUID();
+    const now = new Date().toISOString();
+
     await env.DB.prepare(
       "INSERT INTO users (uuid, username, email, password_hash, created_at, last_login) VALUES (?, ?, ?, ?, ?, ?)"
-    ) 
-    .bind(userUuid, normUsername, normEmail, hash, now, "Never")
-    .run();
+    ).bind(userUuid, normUsername, normEmail, hash, now, "Never").run();
 
+    return jsonResponse({ success: true }, {}, request);
   } catch (err) {
-    return json({ error: "Email already exists" }, 400);
+    return jsonResponse(
+      { error: "Email already exists" },
+      { status: 400 },
+      request
+    );
   }
-  return json({ success: true });
-};
+}
 
+/**
+ * User login
+ */
 async function login(request, env) {
-  if (request.method === "OPTIONS") {
-    return new Response(null, { 
-      headers: corsHeaders 
-    }); 
+  const { body, error } = await parseRequestBody(request);
+  if (error) return errorResponse(error, 400, request.headers.get("Origin"));
+
+  const { email, password, browser } = body;
+
+  if (!email || !password) {
+    return jsonResponse(
+      { error: "Missing email or password" },
+      { status: 400 },
+      request
+    );
   }
-  const { email, password, browser } = await request.json();
 
-  const normemail = email.toLowerCase().trim();
+  try {
+    const normEmail = email.toLowerCase().trim();
 
-  const user = await env.DB.prepare(
-    "SELECT * FROM users WHERE email = ?"
-  )
-  .bind(normemail)
-  .first();
+    // Find user by email
+    const user = await env.DB.prepare(
+      "SELECT * FROM users WHERE email = ?"
+    ).bind(normEmail).first();
 
-  if (!user) return json({ error: "Invalid credentials" }, 400);
-  const valid = await verifyPassword(password, user.password_hash);
-  if (!valid) return json({ error: "Invalid credentials" }, 400);
+    if (!user) {
+      return jsonResponse(
+        { error: "Invalid credentials" },
+        { status: 401 },
+        request
+      );
+    }
 
-  const lastLogin = new Date().toISOString(); 
-  await env.DB.prepare(
-    "UPDATE users SET last_login = ?, browser = ? WHERE email = ?"
-  )
-  .bind(lastLogin, browser, normemail)
-  .run();
+    // Verify password
+    const passwordValid = await verifyPassword(password, user.password_hash);
+    if (!passwordValid) {
+      return jsonResponse(
+        { error: "Invalid credentials" },
+        { status: 401 },
+        request
+      );
+    }
 
-  const token = await createJWT({ 
-    sub: user.uuid,
-    username: user.username,
-    exp: Math.floor(Date.now() /1000) +  60 * 60 * 1 //60 * 60 // 1 Hour exp * 12 = 12 hours 
-    }, 
-    env.JWT_SECRET
-  );
+    // Update last login
+    const lastLogin = new Date().toISOString();
+    await env.DB.prepare(
+      "UPDATE users SET last_login = ?, browser = ? WHERE email = ?"
+    ).bind(lastLogin, browser || "", normEmail).run();
 
-  // const cookieValue = `token=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=3600`;
-  // const cookieValue = `token=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=3600`;
-  const cookieValue = `token=${token}; HttpOnly; SameSite=None; Secure; Path=/; Max-Age=3600; Partitioned;`;
-  return json({ 
-    success: true, 
-    user_uuid: user.uuid,
-    user_username: user.username
-  }, 
-  { 
-    status: 200, 
-    headers: { "Set-Cookie": cookieValue } 
+    // Create auth token and cookie
+    const token = await createAuthToken(user, env.JWT_SECRET);
+    const cookieHeader = createCookieHeader(token);
+
+    return jsonResponse(
+      {
+        success: true,
+        user_username: user.username,
+        user_uuid: user.uuid
+      },
+      {
+        status: 200,
+        headers: { "Set-Cookie": cookieHeader }
+      },
+      request
+    );
+  } catch (err) {
+    console.error("Login error:", err.message);
+    return jsonResponse(
+      { error: "Login failed" },
+      { status: 500 },
+      request
+    );
   }
-)};
+}
 
+/* ============================================================================
+   AUTHORIZATION & TOKEN VERIFICATION
+   ============================================================================ */
+
+/**
+ * Extract and verify JWT token from request cookies
+ * Returns { valid: true, user: payload } or Response error
+ */
 async function verify(request, env) {
-  const cookieHeader = request.headers.get("Cookie") || "";
-  
-  const token = cookieHeader
-    .split('; ')
-    .find(row => row.startsWith('token='))
-    ?.split('=')[1];
+  const token = extractTokenFromCookies(request);
 
   if (!token) {
-    return new Response(JSON.stringify({ error: "No session found" }), { 
-      status: 401, 
-      headers: { "Content-Type": "application/json", ...corsHeaders } 
-    });
+    return errorResponse(
+      { error: "No session found" },
+      401,
+      request.headers.get("Origin")
+    );
   }
 
   try {
     const payload = await verifyJWT(token, env.JWT_SECRET);
-
     return { valid: true, user: payload };
-
   } catch (err) {
-    return new Response(JSON.stringify({ error: "Invalid or expired session" }), { 
-      status: 401, 
-      headers: { "Content-Type": "application/json", ...corsHeaders } 
-    });
-  }
-}
-
-async function verifyJWT(token, secret) {
-  const [headerB64, payloadB64, signatureB64] = token.split(".");
-  
-  if (!headerB64 || !payloadB64 || !signatureB64) {
-    throw new Error("Invalid token format");
-  } 
-  
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false, 
-    ["verify"] 
+    return errorResponse(
+      { error: "Invalid or expired session" },
+      401,
+      request.headers.get("Origin")
     );
-
-    const data = `${headerB64}.${payloadB64}`;
-    const signature = Uint8Array.from( base64UrlDecode(signatureB64),
-    c => c.charCodeAt(0) 
-    ); 
-
-    const valid = await crypto.subtle.verify(
-      "HMAC", 
-      key, 
-      signature, 
-      encoder.encode(data) 
-    ); 
-    
-    if (!valid) throw new Error("Invalid signature");
-    
-    const payloadJson = base64UrlDecode(payloadB64);
-    const payload = JSON.parse(payloadJson);
-    const now = Math.floor(Date.now() / 1000);
-    
-    if (payload.exp && now > payload.exp) {
-      throw new Error("Token expired"); 
-
-    } return payload; 
   }
-
-  function base64UrlDecode(str) {
-    str = str.replace(/-/g, '+').replace(/_/g, '/');
-    const pad = str.length % 4; if (pad) str += '='.repeat(4 - pad);
-    return atob(str); 
-  }
-
-
-/* -------------------- PASSWORD HASHING -------------------- */
-
-async function hashPassword(password) {
-  const enc = new TextEncoder().encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", enc);
-  return btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
 }
 
-async function verifyPassword(password, storedHash) {
-  const hash = await hashPassword(password);
-  return hash === storedHash;
+/**
+ * Extract token from Cookie header
+ */
+function extractTokenFromCookies(request) {
+  const cookieHeader = request.headers.get("Cookie") || "";
+  const token = cookieHeader
+    .split("; ")
+    .find((row) => row.startsWith("token="))
+    ?.split("=")[1];
+  return token || null;
 }
 
-/* -------------------- JWT (NO DEPENDENCIES) -------------------- */
+/* ============================================================================
+   JWT & SECURITY
+   ============================================================================ */
 
+/**
+ * Create JWT token for authenticated user
+ */
+async function createAuthToken(user, secret) {
+  const payload = {
+    sub: user.uuid,
+    email: user.email,
+    username: user.username,
+    exp: Math.floor(Date.now() / 1000) + CONFIG.TOKEN_EXPIRY
+  };
+  return createJWT(payload, secret);
+}
+
+/**
+ * Create JWT token
+ * @param {Object} payload - Token payload
+ * @param {string} secret - JWT secret key
+ * @returns {Promise<string>} Encoded JWT token
+ */
 async function createJWT(payload, secret) {
   const header = { alg: "HS256", typ: "JWT" };
 
-  const enc = (obj) =>
+  const encode = (obj) =>
     btoa(JSON.stringify(obj))
       .replace(/=/g, "")
       .replace(/\+/g, "-")
       .replace(/\//g, "_");
 
-  const headerEncoded = enc(header);
-
-  const exp = payload.exp ?? (Math.floor(Date.now() / 1000) + 60 * 60);
-
-  const payloadEncoded = enc({
-    ...payload,
-    exp
-  });
+  const headerEncoded = encode(header);
+  const payloadEncoded = encode(payload);
 
   const key = await crypto.subtle.importKey(
     "raw",
@@ -267,30 +329,182 @@ async function createJWT(payload, secret) {
   return `${headerEncoded}.${payloadEncoded}.${signatureEncoded}`;
 }
 
-/* -------------------- UTIL -------------------- */
+/**
+ * Verify and decode JWT token
+ */
+async function verifyJWT(token, secret) {
+  const [headerB64, payloadB64, signatureB64] = token.split(".");
 
-function json(obj, options = {}, request) {
-  const status = options.status || 200;
-  
-  const headers = {
-    "Content-Type": "application/json",
-    ...corsHeaders,
-    ...options.headers
-    
-  };
+  if (!headerB64 || !payloadB64 || !signatureB64) {
+    throw new Error("Invalid token format");
+  }
 
-  return new Response(JSON.stringify(obj), { status, headers });
+  const encoder = new TextEncoder();
+
+  // Import key for verification
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["verify"]
+  );
+
+  // Verify signature
+  const data = `${headerB64}.${payloadB64}`;
+  const signature = Uint8Array.from(
+    base64UrlDecode(signatureB64),
+    (c) => c.charCodeAt(0)
+  );
+
+  const isValid = await crypto.subtle.verify(
+    "HMAC",
+    key,
+    signature,
+    encoder.encode(data)
+  );
+
+  if (!isValid) throw new Error("Invalid signature");
+
+  // Decode and validate payload
+  const payloadJson = base64UrlDecode(payloadB64);
+  const payload = JSON.parse(payloadJson);
+
+  // Check expiration
+  if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) {
+    throw new Error("Token expired");
+  }
+
+  return payload;
 }
 
-/* -------------------- ToDo -------------------- */
+/**
+ * Hash password using SHA-256
+ */
+async function hashPassword(password) {
+  const enc = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", enc);
+  return btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
+}
+
+/**
+ * Verify password against stored hash
+ */
+async function verifyPassword(password, storedHash) {
+  const hash = await hashPassword(password);
+  return hash === storedHash;
+}
+
+/**
+ * Create HTTP cookie header with token
+ */
+function createCookieHeader(token) {
+  const { name, httpOnly, secure, sameSite, partitioned, maxAge } = CONFIG.COOKIE_CONFIG;
+  return `${name}=${token}; HttpOnly; Secure; SameSite=${sameSite}; Path=/; Max-Age=${maxAge}; ${partitioned ? "Partitioned" : ""}`.trim();
+}
+
+/**
+ * Decode base64url string
+ */
+function base64UrlDecode(str) {
+  str = str.replace(/-/g, "+").replace(/_/g, "/");
+  const pad = str.length % 4;
+  if (pad) str += "=".repeat(4 - pad);
+  return atob(str);
+}
+
+/* ============================================================================
+   TODO HANDLERS
+   ============================================================================ */
+
+/**
+ * Save/sync user's todo list
+ */
 async function saveTodos(request, env) {
-    const authResult = await verify(request, env);
-    if (authResult instanceof Response) return authResult;
-    const user = authResult.user;
-    console.log("Saving data for user:", user.email);
-    return json ({
-      message: "Done some auth",
-      user: user
-    })
-    // ... your save logic ...
+  // Verify authentication
+  const authResult = await verify(request, env);
+  if (authResult instanceof Response) return authResult;
+
+  const userUuid = authResult.user.sub;
+  if (!userUuid) {
+    return jsonResponse(
+      { error: "User UUID missing from auth token" },
+      { status: 400 },
+      request
+    );
   }
+
+  try {
+    // Parse request body
+    const { body, error } = await parseRequestBody(request);
+    if (error) return jsonResponse(error, { status: 400 }, request);
+
+    const { todoList } = body;
+    if (!Array.isArray(todoList)) {
+      return jsonResponse(
+        { error: "Invalid data format: todoList must be an array" },
+        { status: 400 },
+        request
+      );
+    }
+
+    // Delete existing todos for user
+    await env.DB.prepare("DELETE FROM todos WHERE user_uuid = ?")
+      .bind(userUuid)
+      .run();
+
+    // Insert new todos if any exist
+    if (todoList.length > 0) {
+      const statements = todoList.map((todo) =>
+        env.DB.prepare(
+          "INSERT INTO todos (id, user_uuid, task_text, completed, created_at) VALUES (?, ?, ?, ?, ?)"
+        ).bind(
+          crypto.randomUUID(),
+          userUuid,
+          todo.text || "Untitled",
+          todo.completed ? 1 : 0,
+          todo.timestamp || new Date().toISOString()
+        )
+      );
+
+      await env.DB.batch(statements);
+    }
+
+    return jsonResponse(
+      {
+        success: true,
+        message: `Successfully synced ${todoList.length} tasks`,
+        count: todoList.length
+      },
+      {},
+      request
+    );
+  } catch (err) {
+    console.error("Todo save error:", err.message);
+    return jsonResponse(
+      { error: "Failed to save todos to database" },
+      { status: 500 },
+      request
+    );
+  }
+}
+
+/* ============================================================================
+   UTILITY HELPERS
+   ============================================================================ */
+
+/**
+ * Parse and validate JSON request body
+ * @returns {{ body: Object|null, error: Object|null }}
+ */
+async function parseRequestBody(request) {
+  try {
+    const body = await request.json();
+    return { body, error: null };
+  } catch (err) {
+    return {
+      body: null,
+      error: { error: "Invalid JSON in request body" }
+    };
+  }
+}
