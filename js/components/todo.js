@@ -2,7 +2,7 @@ function renderTodo() {
   setContent(`
     <section class="panel">
       <h1>To-Do List</h1>
-      <p class="text-soft">Track tasks, mark progress, and stay organised.</p>
+      <p class="text-soft">Track tasks, mark progress, and stay organized.</p>
 
       <form id="to-do-form">
         <input id="to-do-input" type="text" placeholder="Add a task…">
@@ -14,7 +14,8 @@ function renderTodo() {
         <label><input type="checkbox" id="filter-complete"> Show only completed</label>
         <label><input type="checkbox" id="filter-today"> Today only</label>
         <button id="btn-clear" class="btn-small">Clear filters</button>
-        <button id="btn-save" class="btn-small">Save</button>
+        <button id="btn-save" class="btn-small">Cloud Save</button>
+        <button id="btn-load" class="btn-small">Cloud Sync</button>
       </div>
 
       <ul id="to-do-list"></ul>
@@ -128,4 +129,47 @@ function initTodo() {
     document.getElementById("filter-today").checked = false;
     renderTodos();
   });
+
+  on("#btn-save", "click", cloudSave);
+  on("#btn-load", "click", cloudSync);
 }
+
+async function cloudSave() {
+  const uuid = localStorage.getItem("user_uuid");
+  const response = await fetch("https://the-tree-army-767051.danporter-36a.workers.dev/api/todo/save", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ 
+      user_uuid: uuid, 
+      todoList: todoList})
+  });
+  console.log(body);
+
+  if (response.ok) {
+    const data = await response.json();
+    console.log(data)
+    alert("Saved to Cloud!");
+  } else {
+    console.error("Failed to save to Cloud");
+  }
+}
+
+// async function cloudSync() {
+//   const token = localStorage.getItem("auth");
+//   const response = await fetch("/api/todos", {
+//     headers: { "Authorization": `Bearer ${token}` }
+//   });
+
+//   if (response.ok) {
+//     const data = await response.json();
+//     todoList = data.map(item => ({
+//       text: item.task_text,
+//       completed: item.completed === 1,
+//       timestamp: item.created_at
+//     }));
+//     renderTodos();
+//   }
+// }

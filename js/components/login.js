@@ -85,7 +85,7 @@ function initLogin() {
       navigator.userAgentData?.brands?.[0]?.brand || navigator.userAgent;
 
     const res = await fetch(
-      "https://ancient-term-4335.danporter-36a.workers.dev/api/login",
+      "https://the-tree-army-767051.danporter-36a.workers.dev/api/login",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -104,8 +104,9 @@ function initLogin() {
       return;
     }
 
-    localStorage.setItem("auth", data.token);
-    localStorage.setItem("userID", data.userID);
+    // localStorage.setItem("auth", data.token);
+    localStorage.setItem("userID", data.user_username);
+    localStorage.setItem("user_uuid", data.user_uuid);
     navigate("home");
   });
 }
@@ -188,7 +189,7 @@ function initRegister() {
     }
 
     const res = await fetch(
-      "https://ancient-term-4335.danporter-36a.workers.dev/api/register",
+      "https://the-tree-army-767051.danporter-36a.workers.dev/api/register",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

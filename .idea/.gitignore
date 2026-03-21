@@ -11,3 +11,4 @@
 *.xml
 # Local history of files
 *.iml
+conf.json

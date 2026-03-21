@@ -7,7 +7,7 @@ const routes = {
   testgame: () => renderGame(),
 };
 
-const protectedRoutes = ["home", "toolkit", "notes", "todo", "game"];
+// const protectedRoutes = ["home", "toolkit", "notes", "todo", "game"];
 
 function navigate(route) {
   if (!routes[route]) {
@@ -15,7 +15,7 @@ function navigate(route) {
   }
 
   const protectedRoutes = ["home", "toolkit", "notes", "todo", "game"];
-  const loggedIn = localStorage.getItem("auth") !== null;
+  const loggedIn = localStorage.getItem("user_uuid") !== null;
 
   if (protectedRoutes.includes(route) && !loggedIn) {
     return navigate("login");
