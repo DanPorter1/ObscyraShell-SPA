@@ -105,7 +105,7 @@ function initLogin() {
       return;
     }
 
-    // localStorage.setItem("auth", data.token);
+    localStorage.setItem("auth", "true");
     localStorage.setItem("userID", data.user_username);
     localStorage.setItem("user_uuid", data.user_uuid);
     navigate("home");
@@ -192,8 +192,7 @@ function initRegister() {
     const res = await fetch(
       "https://the-tree-army-767051.danporter-36a.workers.dev/api/register",
       {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST",        credentials: "include",        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: email,
           password: password,
