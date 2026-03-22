@@ -188,6 +188,7 @@ async function cloudSync() {
       completed: item.completed === 1,
       timestamp: item.created_at
     }));
+    saveTodos();
     renderTodos();
   }
 }
