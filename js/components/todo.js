@@ -183,11 +183,11 @@ async function cloudSync() {
   if (response.ok) {
     const data = await response.json();
     console.log(data)
-    // todoList = data.map(item => ({
-    //   text: item.task_text,
-    //   completed: item.completed === 1,
-    //   timestamp: item.created_at
-    // }));
-    // renderTodos();
+    todoList = data.map(item => ({
+      text: item.task_text,
+      completed: item.completed === 1,
+      timestamp: item.created_at
+    }));
+    renderTodos();
   }
 }

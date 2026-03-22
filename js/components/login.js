@@ -27,13 +27,13 @@ function renderLogin() {
       <div id="login-container">
         <div class="login-form-group">
           <label>Email</label>
-          <input type="email" id="login-email" placeholder="you@example.com">
+          <input type="email" name="email" autocomplete="username" required id="login-email" placeholder="you@example.com">
           <div class="error-msg" id="login-email-error"></div>
         </div>
 
         <div class="login-form-group">
           <label>Password</label>
-          <input type="password" id="login-password" placeholder="••••••••">
+          <input type="password" name="password" autocomplete="current-password" required id="login-password" placeholder="••••••••">
           <div class="error-msg" id="login-password-error"></div>
         </div>
 
