@@ -46,7 +46,6 @@ function renderLogin() {
       </div>
     </section>
   `);
-  renderTodo();
   initLogin();
 }
 

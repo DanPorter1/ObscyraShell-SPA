@@ -8,14 +8,14 @@ const routes = {
   // testgame: () => renderGame(),
 };
 
-// const protectedRoutes = ["home", "toolkit", "notes", "todo", "game"];
+// const protectedRoutes = ["home", "toolkit", "notes", "todo", "kanban"];
 
 function navigate(route) {
   if (!routes[route]) {
     return;
   }
 
-  const protectedRoutes = ["home", "toolkit", "notes", "todo", "game"];
+  const protectedRoutes = ["home", "toolkit", "notes", "todo", "kanban"];
   const loggedIn = localStorage.getItem("userID") !== null;
 
   if (protectedRoutes.includes(route) && !loggedIn) {
@@ -46,5 +46,5 @@ window.addEventListener("hashchange", () => {
 });
 
 function isAuth() {
-  return localStorage.getItem("auth") === "true";
+  return localStorage.getItem("uuid") === "true";
 }
