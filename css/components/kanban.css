@@ -87,19 +87,9 @@
   margin-left: auto;
 }
 
-.card-actions button:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.card-actions button:hover:not(:disabled) {
+.card-actions button:hover {
   background: rgba(79, 209, 197, 0.16);
   color: var(--accent);
-}
-
-.btn-danger {
-  color: #fca5a5;
-  border-color: rgba(248, 113, 113, 0.5);
 }
 
 .kanban-add-form {

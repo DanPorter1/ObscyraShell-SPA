@@ -1,3 +1,15 @@
+/* EXAMPLE LOCALSTORAGE OBJ
+  {
+      "id": "6f05a6a9-bb96-48b5-a3a1-faa8a6e5b8d0",
+      "title": "Testing 2",
+      "description": "Testing new add btn",
+      "column_name": "Suggestions",
+      "position": 1,
+      "created_at": "21/03/2026, 22:44:56",
+      "updated_at": "22/03/2026, 19:00:38"
+  }
+*/
+
 const kanbanColumns = [
   "Suggestions",
   "inProgress",

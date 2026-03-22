@@ -1,3 +1,11 @@
+/* EXAMPLE LOCAL STORAGE OBJ
+{
+  "text": "Testing Cloud",
+  "completed": false,
+  "timestamp": "19/03/2026 21:42"
+}
+*/
+
 function renderTodo() {
   setContent(`
     <section class="panel">
@@ -131,9 +139,14 @@ function initTodo() {
   });
 
   on("#btn-save", "click", cloudSave);
-  // on("#btn-load", "click", cloudSync);
+  on("#btn-load", "click", cloudSync);
 }
 
+
+/* ---------- ---------- ----- ---------- ---------- */
+/* ---------- ---------- CLOUD ---------- ---------- */
+/* ---------- ---------- ----- ---------- ---------- */
+/* Removed cloud saves and re-writes */ 
 async function cloudSave() {
   const response = await fetch("https://the-tree-army-767051.danporter-36a.workers.dev/api/todo/save", {
     method: "POST",
@@ -156,19 +169,24 @@ async function cloudSave() {
   }
 }
 
-// async function cloudSync() {
-//   const token = localStorage.getItem("auth");
-//   const response = await fetch("/api/todos", {
-//     headers: { "Authorization": `Bearer ${token}` }
-//   });
+/* Remove local storage and sync with cloud */
+async function cloudSync() {
+  const response = await fetch("https://the-tree-army-767051.danporter-36a.workers.dev/api/todo/sync", {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    }
+  });
 
-//   if (response.ok) {
-//     const data = await response.json();
-//     todoList = data.map(item => ({
-//       text: item.task_text,
-//       completed: item.completed === 1,
-//       timestamp: item.created_at
-//     }));
-//     renderTodos();
-//   }
-// }
+  if (response.ok) {
+    const data = await response.json();
+    console.log(data)
+    // todoList = data.map(item => ({
+    //   text: item.task_text,
+    //   completed: item.completed === 1,
+    //   timestamp: item.created_at
+    // }));
+    // renderTodos();
+  }
+}
