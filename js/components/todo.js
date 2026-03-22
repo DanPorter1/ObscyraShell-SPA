@@ -181,9 +181,9 @@ async function cloudSync() {
   });
 
   if (response.ok) {
-    const {results} = await response.json();
-    console.log(data)
-    todoList = results.map(item => ({
+    const data = await response.json();
+    console.log(data.results);
+    todoList = data.results.map(item => ({
       text: item.task_text,
       completed: item.completed === 1,
       timestamp: item.created_at
