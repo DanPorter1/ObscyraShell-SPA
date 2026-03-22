@@ -13,7 +13,6 @@ function renderLogin() {
 
     on("#logout-btn", "click", () => {
       localStorage.removeItem("userID");
-      localStorage.removeItem("auth");
       navigate("login");
     });
 
@@ -104,7 +103,6 @@ function initLogin() {
       return;
     }
 
-    localStorage.setItem("auth", "true");
     localStorage.setItem("userID", data.user_username);
     navigate("home");
   });

@@ -156,10 +156,8 @@ async function cloudSave() {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({ 
-      user_uuid: uuid, 
       todoList: todoList})
   });
-  console.log({ user_uuid: uuid, todoList });
 
   if (response.ok) {
     const data = await response.json();

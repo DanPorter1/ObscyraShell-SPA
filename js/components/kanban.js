@@ -32,8 +32,8 @@ function renderKanban() {
           <button class="btn-small" type="submit" id="addKBtn">Add</button>
         </div>
         <div class="kanban-sync-right">
-          <button id="Save" value="Save" class="btn-small">Save</button>
-          <button id="Sync" value="Sync" class="btn-small">Load</button>
+          <button id="btn-save-kanban" value="Save" class="btn-small">Save</button>
+          <button id="btn-sync-kanban" value="Sync" class="btn-small">Load</button>
         </div>
       </div>
 
@@ -150,7 +150,10 @@ function initKanban() {
       saveKanbanLocal();
       renderKanbanCards();
     }
+
   });
+  on("#btn-save-kanban", "click", cloudSaveKanban);
+  on("#btn-sync-kanban", "click", cloudSyncKanban);
 }
 
 function saveKanbanLocal() {
@@ -160,4 +163,54 @@ function saveKanbanLocal() {
 function loadKanbanLocal() {
   const saved = localStorage.getItem("kanban_tasks");
   kanbanTasks = saved ? JSON.parse(saved) : [];
+}
+
+/* ---------- ---------- ----- ---------- ---------- */
+/* ---------- ---------- CLOUD ---------- ---------- */
+/* ---------- ---------- ----- ---------- ---------- */
+async function cloudSaveKanban() {
+  const response = await fetch("https://the-tree-army-767051.danporter-36a.workers.dev/api/kanban/save", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ 
+      kanbanItems: kanbanTasks})
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+    console.log(data);
+    alert("Saved to Cloud!");
+  } else {
+    console.error("Failed to save to Cloud");
+  }
+}
+
+/* Remove local storage and sync with cloud */
+async function cloudSyncKanban() {
+  const response = await fetch("https://the-tree-army-767051.danporter-36a.workers.dev/api/kanban/sync", {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    }
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+    console.log(data.results);
+    kanbanTasks = data.results.map(item => ({
+      column_name: item.column_name,
+      created_at: item.created_at,
+      description: item.created_at,
+      id: item.id,
+      position: item.position,
+      title: item.title,
+      updated_at: item.updated_at
+    }));
+    saveKanbanLocal();
+    renderKanbanCards();
+  }
 }
