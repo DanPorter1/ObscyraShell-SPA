@@ -16,8 +16,7 @@ function navigate(route) {
   }
 
   const protectedRoutes = ["home", "toolkit", "notes", "todo", "kanban"];
-  // const loggedIn = localStorage.getItem("userID") !== null;
-  const loggedIn = isUserLoggedIn();
+  const loggedIn = localStorage.getItem("userID") !== null;
 
   if (protectedRoutes.includes(route) && !loggedIn) {
     console.warn("Access denied: No active session cookie found.");
@@ -47,10 +46,6 @@ window.addEventListener("hashchange", () => {
   }
 });
 
-// function isAuth() {
-//   return localStorage.getItem("uuid") === "true";
-// }
-
-function isUserLoggedIn() {
-  return document.cookie.split(';').some(item => item.trim().startsWith('auth='));
+function isAuth() {
+  return localStorage.getItem("uuid") === "true";
 }
