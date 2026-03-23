@@ -30,6 +30,12 @@ function renderKanban() {
       <div class="kanban-sync">
         <div class="kanban-sync-left">
           <button class="btn-small" type="submit" id="addKBtn">Add</button>
+          <select class="card-priority" id="card-priority">
+            <option value="0">Other</option>
+            <option value="1">Low</option>
+            <option value="2">Medium</option>
+            <option value="3">High</option>
+          </select>
         </div>
         <div class="kanban-sync-right">
           <button id="btn-save-kanban" value="Save" class="btn-small">Save</button>
@@ -70,7 +76,7 @@ function renderKanbanCards() {
     // TODO : Pen icon for edit
     card.innerHTML = `
       <div class="card-content">
-        <h3 class="card-title">${task.title}</h3>
+        <h3 class="card-title">${task.title} <span class="card-priority">${task.priority}</span></h3> 
         <p class="card-desc text-soft">${task.description || ""}</p>
         <div class="card-meta">
           <span class="card-time">${task.created_at}</span>
@@ -81,13 +87,14 @@ function renderKanbanCards() {
          <button class="move-btn" data-index="${index}" data-dir="next">→</button>
          <button class="edit-btn" data-index="${index}">E</button>
          <button class="delete-btn btn-right" data-index="${index}">×</button>
+         
       </div>
     `;
     columnContainer.appendChild(card);
   });
 }
 
-function addKanbanCard(title, description) {
+function addKanbanCard(title, description, priority) {
   const newTask = {
     id: crypto.randomUUID(),
     title: title,
@@ -95,7 +102,8 @@ function addKanbanCard(title, description) {
     column_name: "Suggestions",
     position: kanbanTasks.length,
     created_at: new Date().toLocaleString("en-GB"),
-    updated_at: new Date().toLocaleString("en-GB")
+    updated_at: new Date().toLocaleString("en-GB"),
+    priority: priority
   };
 
   kanbanTasks.push(newTask);
@@ -130,8 +138,9 @@ function initKanban() {
     e.preventDefault();
     const title = document.getElementById("kanban-title").value.trim();;
     const desc = document.getElementById("kanban-desc").value.trim();
+    const priority = document.getElementById("card-priority").value.trim();
     if (!title) return;
-    addKanbanCard(title, desc);
+    addKanbanCard(title, desc, priority);
     input.value = "";
   });
 
@@ -208,7 +217,8 @@ async function cloudSyncKanban() {
       id: item.id,
       position: item.position,
       title: item.title,
-      updated_at: item.updated_at
+      updated_at: item.updated_at,
+      priority: item.priority
     }));
     saveKanbanLocal();
     renderKanbanCards();
