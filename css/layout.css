@@ -57,7 +57,7 @@
 
 .panel {
   width: 100%;
-  max-width: 900px;
+  /* max-width: 900px; */
   padding: 24px;
   background: var(--bg-panel);
   border: 1px solid var(--border-soft);
