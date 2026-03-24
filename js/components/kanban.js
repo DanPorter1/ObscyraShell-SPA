@@ -12,7 +12,7 @@
 
 const kanbanColumns = [
   "Suggestions",
-  "Todo",
+  "ToDo",
   "inProgress",
   "Complete",
 ];
@@ -112,7 +112,7 @@ function addKanbanCard(title, description, priority) {
 }
 
 function moveCard(index, direction) {
-  const columns = ["Suggestions", "Todo", "inProgress", "Complete"];
+  const columns = ["Suggestions", "ToDo", "inProgress", "Complete"];
   let currentIndex = columns.indexOf(kanbanTasks[index].column_name);
   
   if (direction === "next" && currentIndex < columns.length - 1) {
