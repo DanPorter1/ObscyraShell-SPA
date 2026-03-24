@@ -12,8 +12,8 @@
 
 const kanbanColumns = [
   "Suggestions",
+  "Todo",
   "inProgress",
-  "Testing",
   "Complete",
 ];
 
