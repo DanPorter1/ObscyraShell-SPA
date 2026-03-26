@@ -213,7 +213,7 @@ async function cloudSyncKanban() {
     kanbanTasks = data.results.map(item => ({
       column_name: item.column_name,
       created_at: item.created_at,
-      description: item.created_at,
+      description: item.description,
       id: item.id,
       position: item.position,
       title: item.title,
