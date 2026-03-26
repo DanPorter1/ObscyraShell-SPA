@@ -31,10 +31,10 @@ function renderKanban() {
         <div class="kanban-sync-left">
           <button class="btn-small" type="submit" id="addKBtn">Add</button>
           <select class="card-priority" id="card-priority">
-            <option value="0">Other</option>
-            <option value="1">Low</option>
-            <option value="2">Medium</option>
-            <option value="3">High</option>
+            <option value="Other">Other</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
           </select>
         </div>
         <div class="kanban-sync-right">
