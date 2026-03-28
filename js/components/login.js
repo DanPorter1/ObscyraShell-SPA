@@ -1,5 +1,6 @@
 function renderLogin() {
-  const user = localStorage.getItem("userID");
+  const user = getUserValue();
+  // const user = localStorage.getItem("userID");
   if (user) {
     setContent(`
       <section class="panel login">
@@ -103,7 +104,9 @@ function initLogin() {
       return;
     }
 
-    localStorage.setItem("userID", data.user_username);
+    // localStorage.setItem("userID", data.user_username);
+    setWithExpiry("userID", data.user_username, 36000); // 10 hours
+
     navigate("home");
   });
 }
@@ -318,3 +321,4 @@ function loginLogic(email, password) {
 
   return { valid: true };
 }
+

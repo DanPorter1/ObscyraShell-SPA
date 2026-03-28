@@ -1,14 +1,16 @@
 function renderDashboard() {
-  const user = localStorage.getItem("userID");
+  // const user = localStorage.getItem("userID");
+  const user = getUserValue();
   const name = user ? user.split("@")[0] : "Guest";
 
   // Load recent tasks (max 5)
-  let recent = [];
+  let recentTodo = [];
   try {
-    const saved = JSON.parse(localStorage.getItem("todos") || "[]");
-    recent = saved.slice(-5).reverse();
+    const savedTodo = JSON.parse(localStorage.getItem("todos") || "[]");
+    recentTodo = savedTodo.slice(-5).reverse();
   } catch (e) {}
 
+  // TODO: recent kanban - Possible priority?
   setContent(`
     <section class="panel dashboard">
       <h1>Welcome, <span class="text-accent">${name}</span></h1>
@@ -30,6 +32,11 @@ function renderDashboard() {
             <p>Tasks</p>
           </div>
 
+          <div class="dash-tile" data-route="kanban">
+            <h2>Kanban</h2>
+            <p>Project management</p>
+          </div>
+
           <div class="dash-tile" data-route="login">
             <h2>Account</h2>
             <p>Login & settings</p>
@@ -39,11 +46,11 @@ function renderDashboard() {
       <div class="dash-section">
         <h2>Recent Tasks</h2>
         <ul id="dash-recent">
-          ${recent.length === 0 ? 
+          ${recentTodo.length === 0 ? 
             `
             <li class="empty">No recent tasks</li>
             `
-            : recent.map((t) => 
+            : recentTodo.map((t) => 
             `
               <li>
                 <span class="task-title">${t.text}</span>

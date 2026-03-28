@@ -14,7 +14,7 @@ function navigate(route) {
   if (!routes[route]) {
     return;
   }
-
+  cleanupExpired("userID");
   const protectedRoutes = ["home", "toolkit", "notes", "todo", "kanban"];
   const loggedIn = localStorage.getItem("userID") !== null;
 
