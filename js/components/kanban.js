@@ -71,7 +71,8 @@ function renderKanbanCards() {
     if (!columnContainer) return;
 
     const card = document.createElement("div");
-    card.className = "kanban-card";
+    const priority = task.priority ? task.priority.toLowerCase() : "other";
+    card.className = `kanban-card ${priority}`;
 
     // TODO : Pen icon for edit
     card.innerHTML = `

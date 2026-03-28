@@ -47,6 +47,16 @@ ul {
   --radius-lg: 14px;
   --fast: 0.15s ease;
   --med: 0.25s ease;
+
+  /* kanban pri */
+  --priority-high: #ff4d6d;
+  --priority-med: #ffb703;
+  --priority-low: #48cae4;
+  --priority-other: #b794f4;
+  --glow-high: 0 0 15px rgba(255, 77, 109, 0.3);
+  --glow-med: 0 0 15px rgba(255, 183, 3, 0.25);
+  --glow-low: 0 0 15px rgba(72, 202, 228, 0.2);
+  --glow-other: 0 0 15px rgba(183, 148, 244, 0.2);
 }
 
 h1 {

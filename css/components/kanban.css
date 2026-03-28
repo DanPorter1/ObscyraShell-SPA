@@ -47,6 +47,32 @@
   box-shadow: var(--glow-soft);
 }
 
+.kanban-card.high {
+  border-left-color: var(--priority-high);
+  box-shadow: var(--glow-high);
+}
+
+.kanban-card.medium {
+  border-left-color: var(--priority-med);
+  box-shadow: var(--glow-med);
+}
+
+.kanban-card.low {
+  border-left-color: var(--priority-low);
+  box-shadow: var(--glow-low);
+}
+
+.kanban-card.other {
+  border-left-color: var(--priority-other);
+  box-shadow: var(--glow-other);
+}
+
+.kanban-card:hover {
+  background: var(--bg-panel-strong);
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
 .kanban-card:active {
   cursor: grabbing;
 }
